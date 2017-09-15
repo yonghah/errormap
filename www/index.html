@@ -6,7 +6,7 @@
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.js'></script>
     <script src="https://d3js.org/d3.v4.min.js"></script>
-
+    <script src="https://unpkg.com/vue"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.css' rel='stylesheet' />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <style>
@@ -34,12 +34,19 @@
 </style>
 
 <div id='map'></div>
-<div class='title panel panel-primary'>
+<div class='title panel panel-primary' id='app'>
   <div class="panel-heading">Choropleth map <br> with errors</div>
     <div class="panel-body">
-      Estimate is expressed a color filled in the polygon.
-      Upper confidence limt and lower confidence is expressed with alternating
-      colors of the polygon boundary.
+      <p>Estimate is expressed with a color filled in the polygon.
+      Upper confidence limt and lower confidence limit  is expressed with alternating
+      colors of the polygon boundary.</p>
+      <label> Boundary Thinkness </label>
+      <input id='thicknessSlider' type='range' min=1 max=9  step=0.1
+         v-model='thickness' v-on:input='changeThickness'/>
+      <label> Dash Gap</label>
+      <input id='gapSlider' type='range' min=0.1 max=5 step=0.1
+         v-model='gap' v-on:input='changeGap'/>
+
     </div>
 </div>
 <script>
@@ -53,10 +60,40 @@ var map = new mapboxgl.Map({
 
 var color1 = "#c9cfd8";
 var color2 = "#073682";
-var line_width_min = 1;
-var line_width_max = 10;
 var dash_gap = 1.2;
 
+
+var app = new Vue({
+  el:'#app',
+  data: {
+    thickness: 3,
+    gap: 1.2
+  },
+  computed: {
+    maxThickness: function() {return Number(this.thickness)*4},
+    minThickness: function() {return Number(this.thickness)*0.05}
+  },
+  methods: {
+    changeThickness: function(e){
+      var newWidth = {'stops': [[5, app.minThickness], [10,
+        app.maxThickness]]};
+      var newOffset = {'stops': [[5, app.minThickness*0.5], [10,
+        app.maxThickness*0.5]]};
+      map.setPaintProperty('c1-layer', 'line-width', newWidth);
+      map.setPaintProperty('c1-layer', 'line-offset', newOffset);
+      map.setPaintProperty('c2-layer', 'line-width', newWidth);
+      map.setPaintProperty('c2-layer', 'line-offset', newOffset);
+    },
+    changeGap: function(e){
+      map.setPaintProperty('c2-layer', 'line-dasharray', [Number(app.gap),
+        Number(app.gap)]);
+    } 
+  }
+});
+  
+
+  
+  
 map.addControl(new mapboxgl.NavigationControl());
 map.on('load', function() {
     map.addSource('data-source', {
@@ -95,11 +132,11 @@ map.on('load', function() {
                ]
             },
           'line-width': {
-            'stops': [[5, line_width_min], [10, line_width_max]]
+            'stops': [[5, app.minThickness], [10, app.maxThickness]]
           
           },
           'line-offset': {
-            'stops': [[5, line_width_min*0.5], [10, line_width_max*0.5]]
+            'stops': [[5, app.minThickness*0.5], [10, app.maxThickness*0.5]]
           
           }
         }
@@ -119,14 +156,14 @@ map.on('load', function() {
                ]
             },
           'line-width': {
-            'stops': [[5, line_width_min], [10, line_width_max]]
+            'stops': [[5, app.minThickness], [10, app.maxThickness]]
           
           },
           'line-offset': {
-            'stops': [[5, line_width_min*0.5], [10, line_width_max*0.5]]
+            'stops': [[5, app.minThickness*0.5], [10, app.maxThickness*0.5]]
           
           },
-          'line-dasharray': [dash_gap, dash_gap]
+          'line-dasharray': [app.gap, app.gap]
         }
     });
   var popup = new mapboxgl.Popup({

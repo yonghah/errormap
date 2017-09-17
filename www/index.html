@@ -1,73 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8' />
-    <title></title>
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.js'></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://unpkg.com/vue"></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.css' rel='stylesheet' />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <style>
-        body { margin:0; padding:0; }
-        #map { position:absolute; top:0; bottom:0; width:100%; }
-    </style>
+  <meta charset='utf-8' />
+  <title></title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.js'></script>
+  <script src="https://unpkg.com/vue"></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.40.0/mapbox-gl.css' rel='stylesheet' />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <style>
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+  </style>
 </head>
 <body>
-
 <style>
-    .title {
-        position: absolute;
-        top: 0px;
-        left: 0px;
-        margin: 10px;
-        width:200px;
-    }
-    .legend-key {
-        display: inline-block;
-        border-radius: 20%;
-        width: 10px;
-        height: 10px;
-        margin-right: 5px;
-    }
+  .title {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    margin: 10px;
+    width: 300px;
+  }
+  .legend-key {
+    display: inline-block;
+    border-radius: 20%;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+  }
 </style>
-
 <div id='map'></div>
 <div class='title panel panel-primary' id='app'>
-  <div class="panel-heading">Choropleth map <br> with errors</div>
-    <div class="panel-body">
-      <p>Estimate is expressed with a color filled in the polygon.
-      Upper confidence limt and lower confidence limit  is expressed with alternating
-      colors of the polygon boundary.</p>
-      <label> Boundary Thinkness </label>
-      <input id='thicknessSlider' type='range' min=1 max=12  step=0.1
-         v-model='thickness' v-on:input='changeThickness'/>
-      <label> Dash Gap</label>
-      <input id='gapSlider' type='range' min=0.1 max=10 step=0.1
-         v-model='gap' v-on:input='changeGap'/>
-
-    </div>
+  <div class="panel-heading">
+    Mortality Rate<br> with Confidence Interval
+  </div>
+  <div class="panel-body">
+    <p>Estimate is expressed with the color filled in the polygon.
+    Upper confidence limt and lower confidence limit 
+    are expressed with alternating
+    colors of the polygon boundary.</p>
+    <label> Boundary Thinkness </label>
+    <input id='thicknessSlider' type='range' min=1 max=12  step=0.1
+       v-model='thickness' v-on:input='changeThickness'/>
+    <label> Dash Scale</label>
+    <input id='gapSlider' type='range' min=0.1 max=10 step=0.1
+       v-model='gap' v-on:input='changeGap'/>
+  </div>
 </div>
 <script>
 mapboxgl.accessToken = 'pk.eyJ1IjoiYWhnbm95IiwiYSI6ImZIcGRiZjgifQ.pL1SaB8gHyl-L2yolSl5Qw';
 var map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v9',
-    center: [-84.93, 44.51],
-    zoom: 6.7
+  container: 'map',
+  style: 'mapbox://styles/mapbox/light-v9',
+  center: [-100, 39.51],
+  zoom: 4 
 });
 
-var color1 = "#c9cfd8";
-var color2 = "#073682";
-var dash_gap = 1.2;
+var mapId = "ahgnoy.azcy5jrk";
+var sourceLayer = "mortality-dsy5iq";
+var estimate = "Mortality.Rate..2014.";
+var c1 = "Mortality.Rate..2014...Min.";
+var c2 = "Mortality.Rate..2014...Max.";
+var minColorE = 0;
+var maxColorE = 50; 
+var interval = maxColorE - minColorE;
 
+var magmaStops = [
+  [minColorE, "rgb(13,8,135)"],
+  [minColorE+interval*0.13, "rgb(75,3,161)"],
+  [minColorE+interval*0.25, "rgb(125,3,168)"],
+  [minColorE+interval*0.38, "rgb(168,34,150)"],
+  [minColorE+interval*0.50, "rgb(203,70,121)"],
+  [minColorE+interval*0.63, "rgb(229,107,93)"],
+  [minColorE+interval*0.75, "rgb(248,148,65)"],
+  [minColorE+interval*0.88, "rgb(253,195,40)"],
+  [minColorE+interval*1.00, "rgb(240,249,33)"]];
 
 var app = new Vue({
   el:'#app',
   data: {
-    thickness: 3,
-    gap: 1.2
+    thickness: 3.2,
+    gap: 4.0
   },
   computed: {
     maxThickness: function() {return Number(this.thickness)*3},
@@ -75,120 +89,121 @@ var app = new Vue({
   },
   methods: {
     changeThickness: function(e){
-      var newWidth = {'stops': [[3, app.minThickness], [10,
-        app.maxThickness]]};
-      var newOffset = {'stops': [[3, app.minThickness*0.5], [10,
-        app.maxThickness*0.5]]};
+      var newWidth = {'stops': [
+        [3, app.minThickness], 
+        [10, app.maxThickness]]};
+      var newOffset = {'stops': [
+        [3, app.minThickness*0.5], 
+        [10, app.maxThickness*0.5]]};
       map.setPaintProperty('c1-layer', 'line-width', newWidth);
       map.setPaintProperty('c1-layer', 'line-offset', newOffset);
       map.setPaintProperty('c2-layer', 'line-width', newWidth);
       map.setPaintProperty('c2-layer', 'line-offset', newOffset);
     },
     changeGap: function(e){
-      map.setPaintProperty('c2-layer', 'line-dasharray', [Number(app.gap),
-        Number(app.gap)]);
+      map.setPaintProperty('c2-layer', 'line-dasharray', 
+        [Number(app.gap), Number(app.gap)]);
     } 
   }
 });
   
-
-  
   
 map.addControl(new mapboxgl.NavigationControl());
 map.on('load', function() {
-    map.addSource('data-source', {
-        type: 'vector',
-        url:'mapbox://ahgnoy.detsm656'
-    });
+  map.addSource('data-source', {
+    type: 'vector',
+    url:'mapbox://' + mapId
+  });
 
-    map.addLayer({
-        'id': 'fill-layer',
-        'type': 'fill',
-        'source': 'data-source',
-        "source-layer": "michigan-4qtdrh",
-        'paint': {
-            'fill-color': {
-                'property': 'mean',
-                'type': 'exponential',
-                "stops": [
-                    [40, color1], 
-                    [210, color2] 
-               ]
-            }
-        }
-    });
-    map.addLayer({
-        'id': 'c1-layer',
-        'type': 'line',
-        'source': 'data-source',
-        "source-layer": "michigan-4qtdrh",
-        'paint': {
-            'line-color': {
-                'property': 'c1',
-                'type': 'exponential',
-                "stops": [
-                    [40, color1], 
-                    [210, color2] 
-               ]
-            },
-          'line-width': {
-            'stops': [[3, app.minThickness], [10, app.maxThickness]]
-          
-          },
-          'line-offset': {
-            'stops': [[3, app.minThickness*0.5], [10, app.maxThickness*0.5]]
-          
-          }
-        }
-    });
-    map.addLayer({
-        'id': 'c2-layer',
-        'type': 'line',
-        'source': 'data-source',
-        "source-layer": "michigan-4qtdrh",
-        'paint': {
-            'line-color': {
-                'property': 'c2',
-                'type': 'exponential',
-                "stops": [
-                    [40, color1], 
-                    [210, color2] 
-               ]
-            },
-          'line-width': {
-            'stops': [[3, app.minThickness], [10, app.maxThickness]]
-          
-          },
-          'line-offset': {
-            'stops': [[3, app.minThickness*0.5], [10, app.maxThickness*0.5]]
-          
-          },
-          'line-dasharray': [app.gap, app.gap]
-        }
-    });
+  map.addLayer({
+    'id': 'fill-layer',
+    'type': 'fill',
+    'source': 'data-source',
+    "source-layer": sourceLayer,
+    'paint': {
+      'fill-color': {
+        'property': estimate,
+        'type': 'exponential',
+        "stops": magmaStops
+      }
+    }
+  });
+  map.addLayer({
+    'id': 'c1-layer',
+    'type': 'line',
+    'source': 'data-source',
+    "source-layer": sourceLayer,
+    'paint': {
+      'line-color': {
+        'property': c1,
+        'type': 'exponential',
+        "stops": magmaStops 
+      },
+      'line-width': {
+        'stops': [[3, app.minThickness], [10, app.maxThickness]]
+      
+      },
+      'line-offset': {
+        'stops': [[3, app.minThickness*0.5], [10, app.maxThickness*0.5]]
+      }
+    }
+  });
+  map.addLayer({
+    'id': 'c2-layer',
+    'type': 'line',
+    'source': 'data-source',
+    "source-layer": sourceLayer,
+    'paint': {
+      'line-color': {
+        'property': c2,
+        'type': 'exponential',
+        "stops": magmaStops
+      },
+      'line-width': {
+        'stops': [[3, app.minThickness], [10, app.maxThickness]]
+      },
+      'line-offset': {
+        'stops': [[3, app.minThickness*0.5], [10, app.maxThickness*0.5]]
+      },
+      'line-dasharray': [app.gap, app.gap]
+    }
+  });
+  map.addLayer({
+    'id': 'boundary-layer',
+    'type': 'line',
+    'source': 'data-source',
+    "source-layer": sourceLayer,
+    'paint': {
+      'line-color': "#FFFFFF",
+      'line-opacity': 0.2,
+      'line-width': {
+        'stops': [[2, 0], [15, 3]]
+      }
+    }
+  });
+
   var popup = new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false
+    closeButton: false,
+    closeOnClick: false
   });
 
   map.on('click', 'fill-layer', function(e) {
-      console.log(e);
-      popup.setLngLat(e.lngLat)
-          .setHTML(
-            "estimate:"+e.features[0].properties.mean + "<br>" +
-            "upper CI:"+e.features[0].properties.c2.toFixed(2)+ "<br>" +
-            "lower CI:"+e.features[0].properties.c1.toFixed(2)
-          )
-          .addTo(map);
+    popup.setLngLat(e.lngLat)
+      .setHTML(
+        "FIPS:"+e.features[0].properties["FIPS"] + "<br>" +
+        "upper limit:"+e.features[0].properties[c2] + "<br>" +
+        "<b>estimate:"+e.features[0].properties[estimate] + "</b><br>" +
+        "lower limit:"+e.features[0].properties[c1]
+      )
+      .addTo(map);
   });
   map.on('mouseenter', 'fill-layer', function() {
-      map.getCanvas().style.cursor = 'pointer';
+    map.getCanvas().style.cursor = 'pointer';
   });
   map.on('mouseleave', 'fill-layer', function() {
-      popup.remove();
-      map.getCanvas().style.cursor = '';
+    popup.remove();
+    map.getCanvas().style.cursor = '';
   });
-
 });
 </script>
 </body>

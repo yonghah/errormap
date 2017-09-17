@@ -38,8 +38,16 @@
   <div class="panel-body">
     <p>Estimate is expressed with the color filled in the polygon.
     Upper confidence limt and lower confidence limit 
-    are expressed with alternating
-    colors of the polygon boundary.</p>
+    are expressed with alternating colors of the polygon boundary.
+    The larger an area's uncertainty is, the more salient the area's dashed
+    boundary becomes.
+    <br><br>
+    Estimate: Mortality Rate 2014 (Self-harm and interpersonal violence, Death
+    per 100,000) 
+    <a href="http://ghdx.healthdata.org/us-data" target="_blank">[source]</a>
+    <br><br>
+    Click on a county opens a popup with numbers.
+    </p>
     <label> Boundary Thinkness </label>
     <input id='thicknessSlider' type='range' min=1 max=12  step=0.1
        v-model='thickness' v-on:input='changeThickness'/>
@@ -53,8 +61,8 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiYWhnbm95IiwiYSI6ImZIcGRiZjgifQ.pL1SaB8gHyl-L2
 var map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/light-v9',
-  center: [-100, 39.51],
-  zoom: 4 
+  center: [-90, 41],
+  zoom: 5 
 });
 
 var mapId = "ahgnoy.azcy5jrk";
@@ -62,8 +70,8 @@ var sourceLayer = "mortality-dsy5iq";
 var estimate = "Mortality.Rate..2014.";
 var c1 = "Mortality.Rate..2014...Min.";
 var c2 = "Mortality.Rate..2014...Max.";
-var minColorE = 0;
-var maxColorE = 50; 
+var minColorE = 5;
+var maxColorE = 60; 
 var interval = maxColorE - minColorE;
 
 var magmaStops = [
@@ -81,7 +89,7 @@ var app = new Vue({
   el:'#app',
   data: {
     thickness: 3.2,
-    gap: 4.0
+    gap: 3.0
   },
   computed: {
     maxThickness: function() {return Number(this.thickness)*3},
@@ -165,7 +173,7 @@ map.on('load', function() {
       'line-offset': {
         'stops': [[3, app.minThickness*0.5], [10, app.maxThickness*0.5]]
       },
-      'line-dasharray': [app.gap, app.gap]
+      'line-dasharray': [app.gap, app.gap]   
     }
   });
   map.addLayer({

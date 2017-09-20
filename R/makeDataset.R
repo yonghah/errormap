@@ -9,7 +9,12 @@ att <- select(att_raw, FIPS, Category,
               Mortality.Rate..2014...Max.) %>%
   filter(Category=="Self-harm and interpersonal violence") %>% 
   filter(FIPS > 1000) %>%
-  mutate(FIPS = sprintf("%05d", FIPS))
+  mutate(FIPS = sprintf("%05d", FIPS)) %>%
+  mutate(Mortality.Rate..2014...Interval. = Mortality.Rate..2014...Max. - Mortality.Rate..2014...Min.)
+
+# FIPS 46113 has changed to 46012
+df$FIPS[df$FIPS=='46113'] <- '46102'
+
 joined <- inner_join(df, att)
 plot(joined["Mortality.Rate..2014."])
 st_write(joined, "mortality.geojson")
